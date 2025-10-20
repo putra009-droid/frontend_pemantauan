@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Pemantauan Guru - Admin</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Tambahan style untuk edit/delete */
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+        }
+        
+        .btn-edit {
+            background: #f39c12;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .btn-delete {
+            background: #e74c3c;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .btn-edit:hover {
+            background: #e67e22;
+        }
+        
+        .btn-delete:hover {
+            background: #c0392b;
+        }
+        
+        .modal-edit {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+        }
+        
+        .modal-edit-content {
+            background: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+        }
+        
+        .confirmation-modal {
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+        }
+        
+        .confirmation-content {
+            background: white;
+            margin: 20% auto;
+            padding: 25px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+        
+        .confirmation-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        .btn-confirm {
+            background: #e74c3c;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .btn-cancel {
+            background: #95a5a6;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .btn-logout {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .btn-logout:hover {
+            background: #c0392b;
+        }
+
+        .header {
+            position: relative;
+        }
+
+        .user-info {
+            position: absolute;
+            top: 20px;
+            right: 100px;
+            color: white;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="user-info" id="userInfo"></div>
+            <button class="btn-logout" onclick="logout()">Logout</button>
+            <h1>📊 Sistem Pemantauan Kehadiran Guru</h1>
+            <p>Admin Panel - Kelola Data Guru</p>
+        </div>
+        
+        <div class="content">
+            <!-- Dashboard Stats -->
+            <div class="dashboard">
+                <div class="card">
+                    <h3>Total Guru</h3>
+                    <div class="number" id="totalGuru">0</div>
+                </div>
+                <div class="card">
+                    <h3>Hadir Hari Ini</h3>
+                    <div class="number" id="hadirHariIni">0</div>
+                </div>
+                <div class="card">
+                    <h3>Tidak Hadir</h3>
+                    <div class="number" id="tidakHadir">0</div>
+                </div>
+                <div class="card">
+                    <h3>Persentase</h3>
+                    <div class="number" id="persentase">0%</div>
+                </div>
+            </div>
+
+            <!-- Form Check-in -->
+            <div class="section">
+                <h2>✓ Check-in Guru</h2>
+                <div class="form-group">
+                    <label>Pilih Guru:</label>
+                    <select id="selectGuru">
+                        <option value="">Loading...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Status:</label>
+                    <select id="statusGuru">
+                        <option value="hadir">Hadir</option>
+                        <option value="tidak_hadir">Tidak Hadir</option>
+                        <option value="izin">Izin</option>
+                        <option value="sakit">Sakit</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Catatan:</label>
+                    <input type="text" id="catatan" placeholder="Masukkan catatan...">
+                </div>
+                <button onclick="checkInGuru()" class="btn-primary">Simpan Kehadiran</button>
+            </div>
+
+            <!-- Daftar Kehadiran Hari Ini -->
+            <div class="section">
+                <h2>📋 Kehadiran Hari Ini</h2>
+                <div class="date-selector">
+                    <input type="date" id="tanggal">
+                    <button onclick="loadKehadiran()" class="btn-secondary">Refresh</button>
+                </div>
+                <div id="daftarKehadiran" class="table-container">
+                    <p>Loading data...</p>
+                </div>
+            </div>
+
+            <!-- Daftar Guru -->
+            <div class="section">
+                <h2>👨‍🏫 Daftar Guru</h2>
+                <button onclick="tambahGuru()" class="btn-success">+ Tambah Guru</button>
+                <div class="form-group" style="margin-top: 15px;">
+                    <label>Filter Kelas:</label>
+                    <select id="filterKelas">
+                        <option value="">Semua Kelas</option>
+                        <option value="X IPA 1">X IPA 1</option>
+                        <option value="X IPA 2">X IPA 2</option>
+                        <option value="X IPA 3">X IPA 3</option>
+                        <option value="X IPS 1">X IPS 1</option>
+                        <option value="X IPS 2">X IPS 2</option>
+                        <option value="X IPS 3">X IPS 3</option>
+                        <option value="XI IPA 1">XI IPA 1</option>
+                        <option value="XI IPA 2">XI IPA 2</option>
+                        <option value="XI IPA 3">XI IPA 3</option>
+                        <option value="XI IPS 1">XI IPS 1</option>
+                        <option value="XI IPS 2">XI IPS 2</option>
+                        <option value="XI IPS 3">XI IPS 3</option>
+                        <option value="XII IPA 1">XII IPA 1</option>
+                        <option value="XII IPA 2">XII IPA 2</option>
+                        <option value="XII IPA 3">XII IPA 3</option>
+                        <option value="XII IPS 1">XII IPS 1</option>
+                        <option value="XII IPS 2">XII IPS 2</option>
+                        <option value="XII IPS 3">XII IPS 3</option>
+                    </select>
+                </div>
+                <div id="daftarGuru" class="table-container">
+                    <p>Loading data...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Tambah Guru -->
+    <div id="modalGuru" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="tutupModal()">&times;</span>
+            <h2 id="modalTitle">Tambah Guru Baru</h2>
+            <form onsubmit="simpanGuru(event)">
+                <input type="hidden" id="editGuruId">
+                <div class="form-group">
+                    <label>Nama Guru:</label>
+                    <input type="text" id="namaGuru" required>
+                </div>
+                <div class="form-group">
+                    <label>Email:</label>
+                    <input type="email" id="emailGuru" required>
+                </div>
+                <div class="form-group">
+                    <label>Mata Pelajaran:</label>
+                    <input type="text" id="mapelGuru" required>
+                </div>
+                <div class="form-group">
+                    <label>Kelas:</label>
+                    <select id="kelasGuru" required>
+                        <option value="">Pilih Kelas</option>
+                        <option value="X IPA 1">X IPA 1</option>
+                        <option value="X IPA 2">X IPA 2</option>
+                        <option value="X IPA 3">X IPA 3</option>
+                        <option value="X IPS 1">X IPS 1</option>
+                        <option value="X IPS 2">X IPS 2</option>
+                        <option value="X IPS 3">X IPS 3</option>
+                        <option value="XI IPA 1">XI IPA 1</option>
+                        <option value="XI IPA 2">XI IPA 2</option>
+                        <option value="XI IPA 3">XI IPA 3</option>
+                        <option value="XI IPS 1">XI IPS 1</option>
+                        <option value="XI IPS 2">XI IPS 2</option>
+                        <option value="XI IPS 3">XI IPS 3</option>
+                        <option value="XII IPA 1">XII IPA 1</option>
+                        <option value="XII IPA 2">XII IPA 2</option>
+                        <option value="XII IPA 3">XII IPA 3</option>
+                        <option value="XII IPS 1">XII IPS 1</option>
+                        <option value="XII IPS 2">XII IPS 2</option>
+                        <option value="XII IPS 3">XII IPS 3</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-primary" id="modalSubmitBtn">Simpan Guru</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi Hapus -->
+    <div id="modalHapus" class="confirmation-modal">
+        <div class="confirmation-content">
+            <h3>Konfirmasi Hapus</h3>
+            <p>Apakah Anda yakin ingin menghapus guru ini?</p>
+            <p><strong id="guruYangAkanDihapus"></strong></p>
+            <div class="confirmation-buttons">
+                <button class="btn-cancel" onclick="tutupModalHapus()">Batal</button>
+                <button class="btn-confirm" onclick="konfirmasiHapus()">Ya, Hapus</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        let guruYangAkanDihapus = null;
+        let filteredClass = '';
+        let token = localStorage.getItem('token');
+        let userData = JSON.parse(localStorage.getItem('user') || '{}');
+
+        // Check if user is authenticated
+        function checkAuth() {
+            if (!token) {
+                alert('Anda harus login terlebih dahulu');
+                window.location.href = 'login.html';
+                return false;
+            }
+            return true;
+        }
+
+        // Add authorization header to all fetch requests
+        function authFetch(url, options = {}) {
+            if (!checkAuth()) {
+                return Promise.reject('No authentication token');
+            }
+
+            const headers = {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                ...options.headers
+            };
+
+            return fetch(url, { ...options, headers });
+        }
+
+        // Logout function
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+
+        // Update user info in header
+        function updateUserInfo() {
+            const userInfo = document.getElementById('userInfo');
+            if (userInfo && userData.username) {
+                userInfo.textContent = `Logged in as: ${userData.username} (${userData.role})`;
+            }
+        }
+
+        // Load data saat halaman dibuka
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!checkAuth()) return;
+
+            updateUserInfo();
+
+            // Set default date to today
+            document.getElementById('tanggal').value = new Date().toISOString().split('T')[0];
+            
+            loadData();
+            loadDaftarGuru();
+            loadKehadiran();
+            
+            // Setup event listener untuk filter
+            document.getElementById('filterKelas').addEventListener('change', filterGuruByClass);
+        });
+
+        // Load semua data
+        async function loadData() {
+            try {
+                await loadGuru();
+                await loadKehadiranHariIni();
+            } catch (error) {
+                console.error('Error loading data:', error);
+                if (error.includes('unauthorized') || error.includes('token')) {
+                    logout();
+                }
+            }
+        }
+
+        // Load daftar guru
+        async function loadGuru() {
+            try {
+                let url = API_BASE + '/teachers';
+                if (filteredClass) {
+                    url += `?kelas=${encodeURIComponent(filteredClass)}`;
+                }
+                
+                const response = await authFetch(url);
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        throw new Error('Unauthorized - Please login again');
+                    }
+                    throw new Error('Network error');
+                }
+                
+                const guru = await response.json();
+                
+                // Pastikan guru adalah array
+                if (!Array.isArray(guru)) {
+                    console.error('Invalid data format:', guru);
+                    updateDaftarGuru([]);
+                    return;
+                }
+                
+                // Update total guru
+                document.getElementById('totalGuru').textContent = guru.length;
+                
+                // Update dropdown select
+                const selectGuru = document.getElementById('selectGuru');
+                selectGuru.innerHTML = '<option value="">Pilih Guru</option>';
+                
+                guru.forEach(g => {
+                    const option = document.createElement('option');
+                    option.value = g.id;
+                    option.textContent = `${g.name} - ${g.subject}`;
+                    selectGuru.appendChild(option);
+                });
+                
+                // Update daftar guru di tabel
+                updateDaftarGuru(guru);
+                
+            } catch (error) {
+                console.error('Error loading guru:', error);
+                if (error.message.includes('Unauthorized')) {
+                    logout();
+                }
+            }
+        }
+
+        // Load kehadiran hari ini
+        async function loadKehadiranHariIni() {
+            const today = new Date().toISOString().split('T')[0];
+            await loadKehadiran(today);
+        }
+
+        // Load kehadiran berdasarkan tanggal
+        async function loadKehadiran(tanggal = null) {
+            try {
+                const tgl = tanggal || document.getElementById('tanggal').value;
+                
+                const response = await authFetch(`${API_BASE}/attendance?date=${tgl}`);
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        throw new Error('Unauthorized - Please login again');
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const kehadiran = await response.json();
+                
+                // Pastikan kehadiran adalah array
+                if (!Array.isArray(kehadiran)) {
+                    console.error('Invalid attendance data format:', kehadiran);
+                    updateDaftarKehadiran([]);
+                    updateStatistik([]);
+                    return;
+                }
+                
+                updateDaftarKehadiran(kehadiran);
+                updateStatistik(kehadiran);
+                
+            } catch (error) {
+                console.error('Error loading kehadiran:', error);
+                if (error.message.includes('Unauthorized')) {
+                    logout();
+                } else {
+                    updateDaftarKehadiran([]);
+                    updateStatistik([]);
+                }
+            }
+        }
+
+        // Update statistik dashboard
+        function updateStatistik(kehadiran) {
+            const totalHadir = kehadiran.filter(k => k.status === 'hadir').length;
+            const totalTidakHadir = kehadiran.filter(k => k.status === 'tidak_hadir').length;
+            const totalGuru = parseInt(document.getElementById('totalGuru').textContent);
+            
+            document.getElementById('hadirHariIni').textContent = totalHadir;
+            document.getElementById('tidakHadir').textContent = totalTidakHadir;
+            
+            const persentase = totalGuru > 0 ? Math.round((totalHadir / totalGuru) * 100) : 0;
+            document.getElementById('persentase').textContent = `${persentase}%`;
+        }
+
+        // Update tabel daftar kehadiran
+        function updateDaftarKehadiran(kehadiran) {
+            const container = document.getElementById('daftarKehadiran');
+            
+            if (!Array.isArray(kehadiran)) {
+                container.innerHTML = '<p class="loading">Error: Format data tidak valid</p>';
+                return;
+            }
+            
+            if (kehadiran.length === 0) {
+                container.innerHTML = '<p class="loading">Tidak ada data kehadiran untuk tanggal ini</p>';
+                return;
+            }
+            
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nama Guru</th>
+                            <th>Mata Pelajaran</th>
+                            <th>Kelas</th>
+                            <th>Status</th>
+                            <th>Waktu Masuk</th>
+                            <th>Catatan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            kehadiran.forEach(k => {
+                html += `
+                    <tr>
+                        <td>${k.teacher_name || 'N/A'}</td>
+                        <td>${k.teacher_subject || 'N/A'}</td>
+                        <td>${k.teacher_class || 'N/A'}</td>
+                        <td class="status-${k.status}">${formatStatus(k.status)}</td>
+                        <td>${k.check_in_time || '-'}</td>
+                        <td>${k.notes || '-'}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // Update daftar guru
+        function updateDaftarGuru(guru) {
+            const container = document.getElementById('daftarGuru');
+            
+            if (!Array.isArray(guru)) {
+                container.innerHTML = '<p class="loading">Error: Format data tidak valid</p>';
+                return;
+            }
+            
+            if (guru.length === 0) {
+                container.innerHTML = '<p class="loading">Belum ada data guru</p>';
+                return;
+            }
+            
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nama</th>
+                            <th>Email</th>
+                            <th>Mata Pelajaran</th>
+                            <th>Kelas</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            guru.forEach(g => {
+                html += `
+                    <tr>
+                        <td>${g.name}</td>
+                        <td>${g.email}</td>
+                        <td>${g.subject}</td>
+                        <td>${g.class}</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn-edit" onclick="editGuru(${g.id})">Edit</button>
+                                <button class="btn-delete" onclick="deleteGuru(${g.id}, '${g.name.replace(/'/g, "\\'")}')">Hapus</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // Check-in guru
+        async function checkInGuru() {
+            if (!checkAuth()) return;
+
+            const teacherId = document.getElementById('selectGuru').value;
+            const status = document.getElementById('statusGuru').value;
+            const catatan = document.getElementById('catatan').value;
+            
+            if (!teacherId) {
+                alert('Pilih guru terlebih dahulu!');
+                return;
+            }
+            
+            try {
+                const response = await authFetch(API_BASE + '/attendance', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        teacher_id: parseInt(teacherId),
+                        date: new Date().toISOString().split('T')[0],
+                        status: status,
+                        check_in_time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+                        notes: catatan
+                    })
+                });
+                
+                if (response.ok) {
+                    alert('Data kehadiran berhasil disimpan!');
+                    document.getElementById('catatan').value = '';
+                    loadKehadiran();
+                    loadData();
+                } else {
+                    const errorData = await response.json();
+                    alert('Error: ' + (errorData.error || 'Gagal menyimpan kehadiran'));
+                }
+            } catch (error) {
+                console.error('Error saving attendance:', error);
+                if (error.message.includes('Unauthorized')) {
+                    logout();
+                } else {
+                    alert('Error saat menyimpan kehadiran');
+                }
+            }
+        }
+
+        // Filter guru by class
+        function filterGuruByClass() {
+            filteredClass = document.getElementById('filterKelas').value;
+            loadGuru();
+        }
+
+        // Edit guru
+        async function editGuru(id) {
+            if (!checkAuth()) return;
+
+            try {
+                const response = await authFetch(`${API_BASE}/teachers/${id}`);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch teacher data');
+                }
+                
+                const guru = await response.json();
+                
+                document.getElementById('modalTitle').textContent = 'Edit Guru';
+                document.getElementById('editGuruId').value = guru.id;
+                document.getElementById('namaGuru').value = guru.name;
+                document.getElementById('emailGuru').value = guru.email;
+                document.getElementById('mapelGuru').value = guru.subject;
+                document.getElementById('kelasGuru').value = guru.class;
+                document.getElementById('modalSubmitBtn').textContent = 'Update Guru';
+                
+                document.getElementById('modalGuru').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Error loading teacher data:', error);
+                if (error.message.includes('Unauthorized')) {
+                    logout();
+                } else {
+                    alert('Gagal memuat data guru');
+                }
+            }
+        }
+
+        // Delete guru
+        function deleteGuru(id, nama) {
+            if (!checkAuth()) return;
+            
+            guruYangAkanDihapus = id;
+            document.getElementById('guruYangAkanDihapus').textContent = nama;
+            document.getElementById('modalHapus').style.display = 'block';
+        }
+
+        async function konfirmasiHapus() {
+            if (!guruYangAkanDihapus || !checkAuth()) return;
+            
+            try {
+                const response = await authFetch(`${API_BASE}/teachers/${guruYangAkanDihapus}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    alert('Guru berhasil dihapus');
+                    loadGuru();
+                    tutupModalHapus();
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Gagal menghapus guru');
+                }
+            } catch (error) {
+                console.error('Error deleting teacher:', error);
+                if (error.message.includes('Unauthorized')) {
+                    logout();
+                } else {
+                    alert('Error: ' + error.message);
+                }
+            }
+        }
+
+        function tutupModalHapus() {
+            document.getElementById('modalHapus').style.display = 'none';
+            guruYangAkanDihapus = null;
+        }
+
+        // Simpan guru baru atau update
+        async function simpanGuru(event) {
+            event.preventDefault();
+            if (!checkAuth()) return;
+            
+            const guruId = document.getElementById('editGuruId').value;
+            const isEdit = !!guruId;
+            
+            const formData = {
+                name: document.getElementById('namaGuru').value,
+                email: document.getElementById('emailGuru').value,
+                subject: document.getElementById('mapelGuru').value,
+                class: document.getElementById('kelasGuru').value
+            };
+            
+            const url = isEdit ? `${API_BASE}/teachers/${guruId}` : `${API_BASE}/teachers`;
+            const method = isEdit ? 'PUT' : 'POST';
+            
+            try {
+                const response = await authFetch(url, {
+                    method: method,
+                    body: JSON.stringify(formData)
+                });
+                
+                if (response.ok) {
+                    alert(`Guru berhasil ${isEdit ? 'diupdate' : 'ditambahkan'}!`);
+                    tutupModal();
+                    resetForm();
+                    loadGuru();
+                } else {
+                    const errorData = await response.json();
+                    alert('Error: ' + (errorData.error || errorData.errors?.[0]?.msg || `Gagal ${isEdit ? 'mengupdate' : 'menambah'} guru`));
+                }
+            } catch (error) {
+                console.error('Error saving guru:', error);
+                if (error.message.includes('Unauthorized')) {
+                    logout();
+                } else {
+                    alert('Error menambah guru');
+                }
+            }
+        }
+
+        // Reset form
+        function resetForm() {
+            document.getElementById('modalTitle').textContent = 'Tambah Guru Baru';
+            document.getElementById('editGuruId').value = '';
+            document.getElementById('namaGuru').value = '';
+            document.getElementById('emailGuru').value = '';
+            document.getElementById('mapelGuru').value = '';
+            document.getElementById('kelasGuru').value = '';
+            document.getElementById('modalSubmitBtn').textContent = 'Simpan Guru';
+        }
+
+        // Modal functions
+        function tambahGuru() {
+            if (!checkAuth()) return;
+            resetForm();
+            document.getElementById('modalGuru').style.display = 'block';
+        }
+
+        function tutupModal() {
+            document.getElementById('modalGuru').style.display = 'none';
+            resetForm();
+        }
+
+        // Format status
+        function formatStatus(status) {
+            const statusMap = {
+                'hadir': 'Hadir',
+                'tidak_hadir': 'Tidak Hadir',
+                'izin': 'Izin',
+                'sakit': 'Sakit'
+            };
+            return statusMap[status] || status;
+        }
+
+        // Load daftar guru untuk dropdown
+        async function loadDaftarGuru() {
+            try {
+                const response = await authFetch(API_BASE + '/teachers');
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch teachers');
+                }
+                
+                const guru = await response.json();
+                
+                if (!Array.isArray(guru)) {
+                    console.error('Invalid data format for dropdown:', guru);
+                    return;
+                }
+                
+                const select = document.getElementById('selectGuru');
+                select.innerHTML = '<option value="">Pilih Guru</option>';
+                
+                guru.forEach(g => {
+                    const option = document.createElement('option');
+                    option.value = g.id;
+                    option.textContent = `${g.name} - ${g.subject}`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading guru list:', error);
+                if (error.message.includes('Unauthorized')) {
+                    logout();
+                }
+            }
+        }
+
+        // Close modal jika klik di luar
+        window.onclick = function(event) {
+            const modal = document.getElementById('modalGuru');
+            const modalHapus = document.getElementById('modalHapus');
+            if (event.target === modal) {
+                tutupModal();
+            }
+            if (event.target === modalHapus) {
+                tutupModalHapus();
+            }
+        }
+    </script>
+</body>
+</html>

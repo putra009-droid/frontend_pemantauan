@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lapor Kehadiran Guru - Ketua Kelas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 15px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 100%;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 25px 20px 20px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .user-info {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 0.8em;
+            opacity: 0.9;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logout-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.7em;
+            transition: background 0.3s;
+        }
+        
+        .logout-btn:hover {
+            background: #c0392b;
+        }
+        
+        .header h1 {
+            font-size: 1.4em;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 0.9em;
+        }
+        
+        .content {
+            padding: 20px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border-left: 4px solid #3498db;
+        }
+        
+        .stat-card.hadir {
+            border-left-color: #27ae60;
+        }
+        
+        .stat-card.telat {
+            border-left-color: #f39c12;
+        }
+        
+        .stat-card.tidak-hadir {
+            border-left-color: #e74c3c;
+        }
+        
+        .stat-number {
+            font-size: 1.8em;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 0.8em;
+            color: #7f8c8d;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 1px solid #e9ecef;
+        }
+        
+        .card h3 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        
+        .btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+        
+        .btn-primary:disabled {
+            background: #bdc3c7;
+            transform: none;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        
+        .attendance-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .attendance-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #ecf0f1;
+            transition: background 0.3s;
+        }
+        
+        .attendance-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .attendance-info {
+            flex: 1;
+        }
+        
+        .attendance-info h4 {
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        
+        .attendance-meta {
+            font-size: 0.8em;
+            color: #7f8c8d;
+        }
+        
+        .attendance-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: bold;
+            min-width: 100px;
+            text-align: center;
+        }
+        
+        .status-hadir {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-telat {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-tidak-hadir {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #3498db;
+            padding: 20px;
+        }
+        
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .empty-state {
+            text-align: center;
+            color: #7f8c8d;
+            padding: 40px 20px;
+        }
+        
+        .quick-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .quick-btn {
+            padding: 10px;
+            border: 2px solid #3498db;
+            background: white;
+            color: #3498db;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9em;
+        }
+        
+        .quick-btn:hover {
+            background: #3498db;
+            color: white;
+        }
+        
+        @media (max-width: 480px) {
+            .stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .quick-actions {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 1.2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="user-info">
+                <span id="userKelas"></span>
+                <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+            </div>
+            <h1>📱 Lapor Kehadiran Guru</h1>
+            <p>Ketua Kelas - <span id="kelasInfo"></span></p>
+        </div>
+        
+        <div class="content">
+            <!-- Stats Overview -->
+            <div class="stats">
+                <div class="stat-card hadir">
+                    <span class="stat-number" id="countHadir">0</span>
+                    <span class="stat-label">Hadir</span>
+                </div>
+                <div class="stat-card telat">
+                    <span class="stat-number" id="countTelat">0</span>
+                    <span class="stat-label">Terlambat</span>
+                </div>
+                <div class="stat-card tidak-hadir">
+                    <span class="stat-number" id="countTidakHadir">0</span>
+                    <span class="stat-label">Tidak Hadir</span>
+                </div>
+            </div>
+            
+            <!-- Quick Report Form -->
+            <div class="card">
+                <h3>⚡ Lapor Cepat</h3>
+                
+                <div class="alert alert-success hidden" id="successMessage">
+                    ✅ Laporan berhasil dikirim!
+                </div>
+                
+                <div class="alert alert-error hidden" id="errorMessage">
+                    ❌ Gagal mengirim laporan
+                </div>
+                
+                <form onsubmit="submitLaporan(event)">
+                    <div class="form-group">
+                        <label for="namaGuru">Nama Guru:</label>
+                        <input type="text" id="namaGuru" class="form-control" required 
+                               placeholder="Contoh: Bu Siti, Pak Budi">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="mataPelajaran">Mata Pelajaran:</label>
+                        <input type="text" id="mataPelajaran" class="form-control" required 
+                               placeholder="Contoh: Matematika, IPA">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="statusKehadiran">Status Kehadiran:</label>
+                        <select id="statusKehadiran" class="form-control" required onchange="toggleReasonFields()">
+                            <option value="">Pilih Status</option>
+                            <option value="hadir">✅ Hadir Tepat Waktu</option>
+                            <option value="telat">⏰ Hadir Terlambat</option>
+                            <option value="tidak_hadir">❌ Tidak Hadir</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group hidden" id="alasanGroup">
+                        <label for="alasan" id="alasanLabel">Alasan:</label>
+                        <input type="text" id="alasan" class="form-control" 
+                               placeholder="Masukkan alasan">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="catatan">Catatan Tambahan:</label>
+                        <textarea id="catatan" class="form-control" rows="2" 
+                                  placeholder="Catatan khusus (opsional)"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                        📨 Kirim Laporan
+                    </button>
+                    
+                    <div class="loading hidden" id="loading">
+                        Mengirim laporan...
+                    </div>
+                </form>
+                
+                <div class="quick-actions">
+                    <button class="quick-btn" onclick="fillDemoData('hadir')">
+                        🎯 Demo Hadir
+                    </button>
+                    <button class="quick-btn" onclick="fillDemoData('telat')">
+                        ⏰ Demo Terlambat
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Today's Attendance List -->
+            <div class="card">
+                <h3>📊 Kehadiran Hari Ini</h3>
+                <div class="attendance-list" id="daftarKehadiran">
+                    <div class="empty-state" id="emptyState">
+                        📝 Belum ada laporan kehadiran hari ini
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        let userData = null;
+        let token = null;
+
+        // Check authentication
+        function checkAuth() {
+            token = localStorage.getItem('token');
+            userData = JSON.parse(localStorage.getItem('user') || '{}');
+            
+            if (!token || userData.role !== 'ketua_kelas') {
+                window.location.href = 'login.html';
+                return false;
+            }
+            
+            // Update UI dengan info user
+            document.getElementById('userKelas').textContent = userData.kelas || userData.class || 'X IPA 1';
+            document.getElementById('kelasInfo').textContent = userData.kelas || userData.class || 'X IPA 1';
+            
+            return true;
+        }
+
+        // Add authorization header to all fetch requests
+        function authFetch(url, options = {}) {
+            if (!token) {
+                window.location.href = 'login.html';
+                return Promise.reject('No token');
+            }
+            
+            const headers = {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                ...options.headers
+            };
+            
+            return fetch(url, { ...options, headers });
+        }
+
+        // Toggle reason fields based on status
+        function toggleReasonFields() {
+            const status = document.getElementById('statusKehadiran').value;
+            const alasanGroup = document.getElementById('alasanGroup');
+            const alasanLabel = document.getElementById('alasanLabel');
+            
+            if (status === 'telat') {
+                alasanLabel.textContent = 'Alasan Keterlambatan:';
+                alasanGroup.classList.remove('hidden');
+            } else if (status === 'tidak_hadir') {
+                alasanLabel.textContent = 'Alasan Ketidakhadiran:';
+                alasanGroup.classList.remove('hidden');
+            } else {
+                alasanGroup.classList.add('hidden');
+            }
+        }
+
+        // Submit laporan kehadiran
+        async function submitLaporan(event) {
+            event.preventDefault();
+            
+            const namaGuru = document.getElementById('namaGuru').value.trim();
+            const mataPelajaran = document.getElementById('mataPelajaran').value.trim();
+            const status = document.getElementById('statusKehadiran').value;
+            const alasan = document.getElementById('alasan').value.trim();
+            const catatan = document.getElementById('catatan').value.trim();
+            
+            if (!namaGuru || !mataPelajaran || !status) {
+                showError('Harap lengkapi semua field yang wajib');
+                return;
+            }
+            
+            // Show loading
+            const submitBtn = document.getElementById('submitBtn');
+            const loading = document.getElementById('loading');
+            submitBtn.disabled = true;
+            loading.classList.remove('hidden');
+            hideMessages();
+            
+            try {
+                const requestData = {
+                    teacher_name: namaGuru,
+                    subject: mataPelajaran,
+                    status: status,
+                    notes: catatan + (alasan ? ` | Alasan: ${alasan}` : ''),
+                    class: userData.kelas || userData.class || 'X IPA 1'
+                };
+                
+                console.log('📤 Sending data:', requestData);
+                
+                const response = await authFetch(`${API_BASE}/attendance/mobile`, {
+                    method: 'POST',
+                    body: JSON.stringify(requestData)
+                });
+                
+                console.log('📥 Response status:', response.status);
+                
+                const data = await response.json();
+                console.log('📥 Response data:', data);
+                
+                if (response.ok && data.success) {
+                    showSuccess(data.message || 'Laporan kehadiran berhasil dikirim!');
+                    resetForm();
+                    await loadKehadiran();
+                } else {
+                    throw new Error(data.error || data.message || 'Gagal mengirim laporan');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error:', error);
+                showError('Error: ' + error.message);
+            } finally {
+                submitBtn.disabled = false;
+                loading.classList.add('hidden');
+            }
+        }
+
+        // Load data kehadiran - FIXED VERSION
+async function loadKehadiran() {
+    if (!checkAuth()) return;
+    
+    try {
+        const userClass = userData.kelas || userData.class || 'X IPA 2';
+        const today = new Date().toISOString().split('T')[0];
+        
+        console.log('📅 Loading attendance for:', userClass, 'on', today);
+        
+        // Coba endpoint today dulu
+        const response = await authFetch(`${API_BASE}/attendance/today?class=${encodeURIComponent(userClass)}`);
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+            console.log('✅ Data from today endpoint:', data.attendance);
+            displayKehadiran(data.attendance || []);
+            updateStats(data.attendance || []);
+        } else {
+            throw new Error(data.error || 'Gagal memuat data dari endpoint today');
+        }
+        
+    } catch (error) {
+        console.error('Error loading attendance from today endpoint:', error);
+        
+        // Fallback - coba endpoint attendance dengan parameter date
+        try {
+            const userClass = userData.kelas || userData.class || 'X IPA 2';
+            const today = new Date().toISOString().split('T')[0];
+            
+            console.log('🔄 Trying fallback endpoint...');
+            const response = await authFetch(`${API_BASE}/attendance?date=${today}&kelas=${encodeURIComponent(userClass)}`);
+            const data = await response.json();
+            
+            if (response.ok && Array.isArray(data)) {
+                console.log('✅ Data from fallback endpoint:', data);
+                displayKehadiran(data);
+                updateStats(data);
+            } else {
+                throw new Error('No data available from fallback');
+            }
+        } catch (fallbackError) {
+            console.error('Fallback also failed:', fallbackError);
+            // Tampilkan state kosong
+            displayKehadiran([]);
+            updateStats([]);
+        }
+    }
+}
+
+// Display kehadiran list - FIXED VERSION
+function displayKehadiran(kehadiran) {
+    const container = document.getElementById('daftarKehadiran');
+    const emptyState = document.getElementById('emptyState');
+    
+    // Pastikan elements ada
+    if (!container || !emptyState) {
+        console.error('❌ Container elements not found');
+        return;
+    }
+    
+    console.log('📊 Displaying attendance:', kehadiran);
+    
+    if (!kehadiran || kehadiran.length === 0) {
+        emptyState.style.display = 'block';
+        container.innerHTML = '';
+        container.appendChild(emptyState);
+        return;
+    }
+    
+    emptyState.style.display = 'none';
+    
+    const listHTML = kehadiran.map(item => {
+        const teacherName = item.teacher_name || item.name || 'Unknown Teacher';
+        const subject = item.subject || item.teacher_subject || 'Unknown Subject';
+        const status = item.status || 'hadir';
+        const notes = item.notes || '';
+        const lateReason = item.late_reason || '';
+        const absenceReason = item.absence_reason || '';
+        const time = item.created_at || item.date || item.check_in_time || new Date().toISOString();
+        
+        // Format notes untuk menampilkan alasan
+        let displayNotes = notes;
+        if (status === 'telat' && lateReason) {
+            displayNotes = `⏰ Alasan terlambat: ${lateReason}` + (notes ? ` | ${notes}` : '');
+        } else if (status === 'tidak_hadir' && absenceReason) {
+            displayNotes = `❌ Alasan tidak hadir: ${absenceReason}` + (notes ? ` | ${notes}` : '');
+        }
+        
+        return `
+            <div class="attendance-item">
+                <div class="attendance-info">
+                    <h4>${teacherName}</h4>
+                    <div class="attendance-meta">
+                        ${subject} • ${formatTime(time)}
+                    </div>
+                    ${displayNotes ? `<div class="attendance-meta">📝 ${displayNotes}</div>` : ''}
+                </div>
+                <div class="attendance-status status-${status}">
+                    ${getStatusText(status)}
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    container.innerHTML = listHTML;
+}
+
+// Update statistics - FIXED VERSION
+function updateStats(kehadiran) {
+    const counts = {
+        hadir: 0,
+        telat: 0,
+        tidak_hadir: 0
+    };
+    
+    if (kehadiran && kehadiran.length > 0) {
+        kehadiran.forEach(item => {
+            const status = item.status || 'hadir';
+            counts[status] = (counts[status] || 0) + 1;
+        });
+    }
+    
+    document.getElementById('countHadir').textContent = counts.hadir;
+    document.getElementById('countTelat').textContent = counts.telat;
+    document.getElementById('countTidakHadir').textContent = counts.tidak_hadir;
+}
+
+        // Helper functions
+        function getStatusText(status) {
+            const statusMap = {
+                'hadir': '✅ Hadir',
+                'telat': '⏰ Terlambat',
+                'tidak_hadir': '❌ Tidak Hadir',
+                'izin': '📝 Izin',
+                'sakit': '🏥 Sakit'
+            };
+            return statusMap[status] || status;
+        }
+
+        function formatTime(dateString) {
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleTimeString('id-ID', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+            } catch (e) {
+                return '--:--';
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('namaGuru').value = '';
+            document.getElementById('mataPelajaran').value = '';
+            document.getElementById('statusKehadiran').value = '';
+            document.getElementById('alasan').value = '';
+            document.getElementById('catatan').value = '';
+            document.getElementById('alasanGroup').classList.add('hidden');
+        }
+
+        function showSuccess(message) {
+            const element = document.getElementById('successMessage');
+            element.textContent = message;
+            element.classList.remove('hidden');
+            setTimeout(() => element.classList.add('hidden'), 3000);
+        }
+
+        function showError(message) {
+            const element = document.getElementById('errorMessage');
+            element.textContent = message;
+            element.classList.remove('hidden');
+        }
+
+        function hideMessages() {
+            document.getElementById('successMessage').classList.add('hidden');
+            document.getElementById('errorMessage').classList.add('hidden');
+        }
+
+        // Demo functions
+        function fillDemoData(status) {
+            const guru = ['Bu Siti', 'Pak Budi', 'Bu Rina', 'Pak Joko'];
+            const mapel = ['Matematika', 'IPA', 'Bahasa Indonesia', 'IPS'];
+            
+            document.getElementById('namaGuru').value = guru[Math.floor(Math.random() * guru.length)];
+            document.getElementById('mataPelajaran').value = mapel[Math.floor(Math.random() * mapel.length)];
+            document.getElementById('statusKehadiran').value = status;
+            
+            if (status === 'telat') {
+                document.getElementById('alasan').value = 'Macet di jalan';
+            } else if (status === 'tidak_hadir') {
+                document.getElementById('alasan').value = 'Sakit';
+            }
+            
+            toggleReasonFields();
+            hideMessages();
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+
+        // Auto-refresh every 30 seconds
+        function startAutoRefresh() {
+            setInterval(loadKehadiran, 30000);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            if (checkAuth()) {
+                loadKehadiran();
+                startAutoRefresh();
+                
+                // Debug info
+                console.log('User Data:', userData);
+                console.log('Token:', token ? '✓ Available' : '✗ Missing');
+            }
+        });
+    </script>
+</body>
+</html>
